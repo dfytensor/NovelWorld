@@ -1,0 +1,66 @@
+# novel_judges.jev — 情绪词签判定器（39签 → jev judge 阶段2）
+# 原理：scan-emotion 的词签在事件层 abstraction 为"类型/强度"字段，judge 输出模糊值供策略消费
+
+judge 悬念紧张(事件) -> Fuzzy {
+  base = 0.2
+  rule 事件.类型 == "缺页" => +0.4
+  rule 事件.类型 == "断指" => +0.4
+  rule 事件.类型 == "火漆" => +0.3
+  rule 事件.类型 == "封行" => +0.3
+  combine 加权和
+  return fuzzy(clamp(base), confidence=0.9)
+}
+
+judge 燃(事件) -> Fuzzy {
+  base = 0.15
+  rule 事件.类型 == "翻盘" => +0.5
+  rule 事件.类型 == "护证" => +0.4
+  rule 事件.类型 == "开棺" => +0.35
+  combine 加权和
+  return fuzzy(clamp(base), confidence=0.85)
+}
+
+judge 爽(事件) -> Fuzzy {
+  base = 0.15
+  rule 事件.类型 == "打脸" => +0.5
+  rule 事件.类型 == "昭雪" => +0.45
+  combine 加权和
+  return fuzzy(clamp(base), confidence=0.85)
+}
+
+judge 打脸力度(怼者, 受者, 证据数) -> Fuzzy {
+  base = 0.2
+  rule 证据数 >= 3 => +0.4
+  rule 受者.地位 > 怼者.地位 => +0.2
+  combine 加权和
+  return fuzzy(clamp(base), confidence=0.85)
+}
+
+judge 治愈温暖(事件) -> Fuzzy {
+  base = 0.2
+  rule 事件.类型 == "投喂" => +0.4
+  rule 事件.类型 == "相认" => +0.4
+  rule 事件.类型 == "守护" => +0.3
+  combine 加权和
+  return fuzzy(clamp(base), confidence=0.85)
+}
+
+judge 虐哭(事件) -> Fuzzy {
+  base = 0.15
+  rule 事件.类型 == "名册" => +0.4
+  rule 事件.类型 == "读信" => +0.45
+  rule 事件.类型 == "开棺" => +0.3
+  combine 加权和
+  return fuzzy(clamp(base), confidence=0.85)
+}
+
+# 章级配额判定（情绪五道岗·自动化）
+judge 配额达成(燃, 悬念, 爽, 治愈) -> Fuzzy {
+  base = 0.1
+  rule 燃 > 0.5 => +0.25
+  rule 悬念 > 0.5 => +0.25
+  rule 爽 > 0.4 => +0.2
+  rule 治愈 > 0.4 => +0.2
+  combine 加权和
+  return fuzzy(clamp(base), confidence=0.9)
+}

@@ -1,0 +1,77 @@
+# novel.jev — 小说涌现世界 v0.2（C1四角色·语法对齐village）
+# 运行: C:\Python314\python.exe -X utf8 F:\jev\jev\cli.py run novel.jev --ticks 6
+
+judge 信任(陈述, 来源, 语境) -> Fuzzy {
+  base = 0.5
+  rule 来源.亲密 > 0.7 => +0.2
+  combine 加权和
+  return fuzzy(clamp(base), confidence=0.9)
+}
+
+judge 疯癫嫌疑(行为, 语境) -> Fuzzy {
+  base = 0.3
+  rule 语境.有沈晚在场 => -0.15
+  combine 加权和
+  return fuzzy(clamp(base), confidence=0.85)
+}
+
+judge 悬念度(事件) -> Fuzzy {
+  base = 0.4
+  rule 事件.重要 => +0.3
+  combine 加权和
+  return fuzzy(clamp(base), confidence=0.9)
+}
+
+agent 沈晚 {
+  state { 情绪: {平静: 0.7, 警觉: 0.5, 悲伤: 0.3}, 关系: {萧狁: {亲密: 0.4}, 老景: {亲密: 0.9}, 小满: {亲密: 0.8}} }
+  traits { 手稳: 0.95, 好奇: 0.6, 昭雪执念: 0.95 }
+  goals { 验清真相: 0.95, 守护行里: 0.85, 查明母亲: 0.9 }
+  policy {
+    strategy 验尸优先 {
+      when judge 悬念度(事件) > 0.5 => act 验证(事件, "一寸一寸来。") with 0.9
+      when judge 信任(事件.内容, 事件.来源, 当前语境) < 0.35 => act 留底(事件, "誊一份，入架。") with 0.8
+      otherwise => act 记录(事件, "记下了。") with 0.7
+    }
+    on 感知(事件) { 执行策略(验尸优先, 事件) }
+  }
+}
+
+agent 萧狁 {
+  state { 情绪: {伪装疯: 0.8, 平静: 0.6, 悲伤: 0.4}, 关系: {沈晚: {亲密: 0.5}, 崔尚书: {亲密: 0.2}} }
+  traits { 疯表演: 0.9, 真话浓度: 0.4, 翻案执念: 0.95 }
+  goals { 掀翻旧案: 0.95, 保护沈晚: 0.9, 找到奶娘: 0.8 }
+  policy {
+    strategy 疯局掩护 {
+      when judge 疯癫嫌疑(自己, 当前语境) < 0.4 => act 发疯(事件, "本王乐意。") with 0.85
+      when judge 信任(事件.内容, 事件.来源, 当前语境) > 0.7 => act 轻声真话(事件, "……跟你说真的。") with 0.7
+      otherwise => act 剥花生(事件, "先看着。") with 0.6
+    }
+    on 感知(事件) { 执行策略(疯局掩护, 事件) }
+  }
+}
+
+agent 老景 {
+  state { 情绪: {严肃: 0.8, 关切: 0.7}, 关系: {沈晚: {亲密: 0.95}, 钱一格: {亲密: 0.3}} }
+  traits { 嘴硬: 0.9, 手暖: 0.95, 规矩: 0.9 }
+  goals { 保住行里: 0.9, 守护沈晚: 0.95 }
+  policy {
+    strategy 外冷内热 {
+      when judge 信任(事件.内容, 事件.来源, 当前语境) > 0.5 => act 嘴硬手暖(事件, "胡闹。……东西我备好了。") with 0.9
+      otherwise => act 骂人压惊(事件, "废物。……都退下。") with 0.7
+    }
+    on 感知(事件) { 执行策略(外冷内热, 事件) }
+  }
+}
+
+agent 小满 {
+  state { 情绪: {开心: 0.7, 紧张: 0.3}, 关系: {沈晚: {亲密: 0.9}, 老景: {亲密: 0.85}} }
+  traits { 记账: 0.95, 吃货: 0.9 }
+  goals { 记下一切: 0.95, 投喂师门: 0.8 }
+  policy {
+    strategy 记账投喂 {
+      when judge 悬念度(事件) > 0.5 => act 记账(事件, "记上了！") with 0.95
+      otherwise => act 投喂(事件, "师姐，汤温了三回。") with 0.8
+    }
+    on 感知(事件) { 执行策略(记账投喂, 事件) }
+  }
+}
